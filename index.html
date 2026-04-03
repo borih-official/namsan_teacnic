@@ -591,89 +591,74 @@
 </div>
 
 <script>
-  const audioEl   = document.getElementById('audio');
-  const fileIn1   = document.getElementById('audioFile');
-  const fileIn2   = document.getElementById('audioFile2');
-  const fileNameEl= document.getElementById('fileName');
-  const dropState  = document.getElementById('drop-state');
-  const playerEl  = document.getElementById('player');
-  const playBtn   = document.getElementById('playBtn');
-  const playIcon  = document.getElementById('playIcon');
+  // 1. 요소 선택
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
   const pauseIcon = document.getElementById('pauseIcon');
-  const progressBar= document.getElementById('progressBar');
-  const progressWrap= document.getElementById('progressWrap');
-  const currentTimeEl= document.getElementById('currentTime');
+  const progressBar = document.getElementById('progressBar');
+  const progressWrap = document.getElementById('progressWrap');
+  const currentTimeEl = document.getElementById('currentTime');
   const durationEl = document.getElementById('duration');
-  const rewBtn    = document.getElementById('rewBtn');
-  const fwdBtn    = document.getElementById('fwdBtn');
+  const fileNameEl = document.getElementById('fileName');
 
-  function loadFile(file) {
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    audioEl.src = url;
-    audioEl.load();
-    fileNameEl.textContent = file.name;
-    dropState.style.display = 'none';
-    playerEl.classList.add('active');
-  }
+  // 2. 초기 설정: 서버의 guide.mp3를 강제로 로드
+  window.addEventListener('DOMContentLoaded', () => {
+    audio.src = 'guide.mp3'; // 파일 경로 명시
+    audio.load();
+    fileNameEl.textContent = '남산 보리 티크닉 가이드';
+  });
 
-  fileIn1.addEventListener('change', e => loadFile(e.target.files[0]));
-  fileIn2.addEventListener('change', e => loadFile(e.target.files[0]));
-
-  // Play / Pause
+  // 3. 재생/일시정지 로직
   playBtn.addEventListener('click', () => {
-    if (audioEl.paused) {
-      audioEl.play();
+    if (audio.paused) {
+      audio.play().catch(err => {
+        console.error("재생 에러:", err);
+        alert("화면을 한 번 클릭한 후 재생 버튼을 눌러주세요.");
+      });
     } else {
-      audioEl.pause();
+      audio.pause();
     }
   });
 
-  audioEl.addEventListener('play', () => {
+  // 4. 상태 변화 감지 (아이콘 변경)
+  audio.addEventListener('play', () => {
     playIcon.style.display = 'none';
-    pauseIcon.style.display = '';
-  });
-  audioEl.addEventListener('pause', () => {
-    playIcon.style.display = '';
-    pauseIcon.style.display = 'none';
-  });
-  audioEl.addEventListener('ended', () => {
-    playIcon.style.display = '';
-    pauseIcon.style.display = 'none';
-    progressBar.style.width = '0%';
-    currentTimeEl.textContent = '0:00';
+    pauseIcon.style.display = 'inline-block';
   });
 
-  // Duration
-  audioEl.addEventListener('loadedmetadata', () => {
-    durationEl.textContent = fmt(audioEl.duration);
+  audio.addEventListener('pause', () => {
+    playIcon.style.display = 'inline-block';
+    pauseIcon.style.display = 'none';
   });
 
-  // Progress
-  audioEl.addEventListener('timeupdate', () => {
-    if (!audioEl.duration) return;
-    const pct = (audioEl.currentTime / audioEl.duration) * 100;
+  // 5. 시간 업데이트 및 프로그레스 바
+  audio.addEventListener('timeupdate', () => {
+    const pct = (audio.currentTime / audio.duration) * 100;
     progressBar.style.width = pct + '%';
-    currentTimeEl.textContent = fmt(audioEl.currentTime);
+    currentTimeEl.textContent = fmt(audio.currentTime);
   });
 
-  // Seek
-  progressWrap.addEventListener('click', e => {
+  audio.addEventListener('loadedmetadata', () => {
+    durationEl.textContent = fmt(audio.duration);
+  });
+
+  // 6. 클릭으로 시간 이동
+  progressWrap.addEventListener('click', (e) => {
     const rect = progressWrap.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
-    audioEl.currentTime = ratio * audioEl.duration;
+    audio.currentTime = ratio * audio.duration;
   });
 
-  // Skip
-  rewBtn.addEventListener('click', () => { audioEl.currentTime = Math.max(0, audioEl.currentTime - 15); });
-  fwdBtn.addEventListener('click', () => { audioEl.currentTime = Math.min(audioEl.duration, audioEl.currentTime + 15); });
-
+  // 시간 포맷 함수 (0:00)
   function fmt(s) {
-    if (!s || isNaN(s)) return '0:00';
+    if (isNaN(s)) return '0:00';
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return m + ':' + String(sec).padStart(2, '0');
   }
+
+  // 15초 이동 버튼 연동 (필요 시)
+  document.getElementById('rewBtn').addEventListener('click', () => audio.currentTime -= 15);
+  document.getElementById('fwdBtn').addEventListener('click', () => audio.currentTime += 15);
 </script>
-</body>
-</html>
